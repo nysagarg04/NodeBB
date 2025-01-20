@@ -25,6 +25,9 @@ const Upgrade = module.exports;
 
 Upgrade.getAll = async function () {
 	let files = await file.walk(path.join(__dirname, './upgrades'));
+	if (!Array.isArray(files)) {
+		files = [];
+	}
 
 	// Sort the upgrade scripts based on version
 	files = files.filter(file => path.basename(file) !== 'TEMPLATE').sort((a, b) => {
@@ -119,7 +122,18 @@ Upgrade.runParticular = async function (names) {
 };
 
 Upgrade.process = async function (files, skipCount) {
-	console.log(`${chalk.green('OK')} | ${chalk.cyan(`${files.length} script(s) found`)}${skipCount > 0 ? chalk.cyan(`, ${skipCount} skipped`) : ''}`);
+
+	console.log('DEBUG: Received files:', files);
+	console.log('DEBUG: Type of files:', typeof files);
+
+	if (!Array.isArray(files)){
+		throw new Error('Invalid input: files should be an array');
+	}
+
+	const oktext = chalk.green('OK');
+	const scriptfoundtext = chalk.cyan(`${files.length} script(s) found`);
+	const skippedText = skipCount > 0 ? chalk.cyan(`, ${skipCount} skipped`) : '';
+	console.log(`${oktext} | ${scriptfoundtext}${skippedText}`);
 	const [schemaDate, schemaLogCount] = await Promise.all([
 		db.get('schemaDate'),
 		db.sortedSetCard('schemaLog'),
@@ -139,7 +153,18 @@ Upgrade.process = async function (files, skipCount) {
 			date: date,
 		};
 
-		process.stdout.write(`${chalk.white('  → ') + chalk.gray(`[${[date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate()].join('/')}] `) + scriptExport.name}...`);
+		const arrow = chalk.white(' → ');
+		const dateArray = [
+			date.getUTCFullYear(),
+			date.getUTCMonth() + 1,
+			date.getUTCDate(),
+		].join('/');
+
+		const dateString = chalk.gray(`[${dateArray}]`);
+		const scriptName = scriptExport.name;
+
+		const outputLine = `${arrow}${dateString}${scriptName}...`;
+		process.stdout.write(outputLine);
 
 		// For backwards compatibility, cross-reference with schemaDate (if found). If a script's date is older, skip it
 		if ((!schemaDate && !schemaLogCount) || (scriptExport.timestamp <= schemaDate && semver.lt(version, '1.5.0'))) {
