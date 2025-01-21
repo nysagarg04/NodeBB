@@ -122,14 +122,12 @@ Upgrade.runParticular = async function (names) {
 };
 
 Upgrade.process = async function (files, skipCount) {
-
 	console.log('DEBUG: Received files:', files);
 	console.log('DEBUG: Type of files:', typeof files);
 
-	if (!Array.isArray(files)){
+	if (!Array.isArray(files)) {
 		throw new Error('Invalid input: files should be an array');
 	}
-
 	const oktext = chalk.green('OK');
 	const scriptfoundtext = chalk.cyan(`${files.length} script(s) found`);
 	const skippedText = skipCount > 0 ? chalk.cyan(`, ${skipCount} skipped`) : '';
